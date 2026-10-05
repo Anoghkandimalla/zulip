@@ -1,0 +1,7 @@
+# apiwatch: watches the Stripe changelog and opens DRAFT PRs patching code
+# affected by breaking changes. https://github.com/Anoghkandimalla/Vines
+apis:
+  - name: stripe
+    changelog: https://docs.stripe.com/changelog.md
+state_file: .apiwatch/state.json
+base_branch: main

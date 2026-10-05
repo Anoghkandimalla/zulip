@@ -1,0 +1,31 @@
+name: apiwatch
+on:
+  schedule:
+    - cron: "17 6 * * *"   # daily; offset to avoid top-of-hour congestion
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  apiwatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install apiwatch
+        # Pin to a tag or commit for reproducibility once releases exist.
+        run: pip install git+https://github.com/Anoghkandimalla/Vines.git@claude/continue-fcnj76
+      - name: Install Claude Code (patch agent)
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Run apiwatch
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # --commit-state persists the changelog watermark between runs.
+        run: apiwatch run --repo . --config apiwatch.yml --commit-state
