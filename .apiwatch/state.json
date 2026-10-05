@@ -1,1 +1,5 @@
-{"stripe": {"last_version": "2025-09-30"}}
+{
+  "stripe": {
+    "last_version": "2025-09-30"
+  }
+}
