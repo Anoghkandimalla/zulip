@@ -10,7 +10,14 @@ from zerver.lib.exceptions import UnsupportedWebhookEventTypeError
 from zerver.lib.response import json_success
 from zerver.lib.timestamp import datetime_to_global_time, timestamp_to_datetime
 from zerver.lib.typed_endpoint import JsonBodyPayload, typed_endpoint
-from zerver.lib.validator import WildValue, check_bool, check_int, check_none_or, check_string
+from zerver.lib.validator import (
+    WildValue,
+    WildValueDict,
+    check_bool,
+    check_int,
+    check_none_or,
+    check_string,
+)
 from zerver.lib.webhooks.common import check_send_webhook_message
 from zerver.models import UserProfile
 
@@ -182,12 +189,22 @@ def topic_and_body(payload: WildValue) -> tuple[str, str]:
                     for key, value in object_["metadata"].items():
                         body += f"\n{key}: {value.tame(check_string)}"
         if resource == "discount":
+            if "coupon" in object_:
+                coupon = object_["coupon"]
+            else:  # nocoverage
+                # Since API version 2025-09-30.clover, the coupon is under
+                # source, and is only an ID unless explicitly expanded.
+                coupon = object_["source"]["coupon"]
+            if isinstance(coupon, WildValueDict):
+                coupon_id = coupon["id"].tame(check_string)
+                coupon_name = coupon["name"].tame(check_string)
+            else:  # nocoverage
+                coupon_id = coupon.tame(check_string)
+                coupon_name = coupon_id
             body = "Discount {verbed} ([{coupon_name}]({coupon_url})).".format(
                 verbed=event.replace("_", " "),
-                coupon_name=object_["coupon"]["name"].tame(check_string),
-                coupon_url="https://dashboard.stripe.com/{}/{}".format(
-                    "coupons", object_["coupon"]["id"].tame(check_string)
-                ),
+                coupon_name=coupon_name,
+                coupon_url="https://dashboard.stripe.com/{}/{}".format("coupons", coupon_id),
             )
         if resource == "source":  # nocoverage
             body = default_body()
